@@ -17,6 +17,9 @@
     <allow-intent href="geo:*" />
     <platform name="android">
         <allow-intent href="market:*" />
+        <preference name="android-minSdkVersion" value="14" />
+        <preference name="android-maxSdkVersion" value="14" />
+        <preference name="android-targetSdkVersion" value="14" />
     </platform>
     <platform name="ios">
         <allow-intent href="itms:*" />
@@ -24,6 +27,6 @@
     </platform>
     <plugin name="cordova-plugin-whitelist" spec="^1.3.3" />
     <plugin name="cz.blocshop.socketsforcordova" spec="^1.1.0" />
-    <engine name="android" spec="^7.1.4" />
     <engine name="browser" spec="^5.0.4" />
+    <engine name="android" spec="^7.1.4" />
 </widget>

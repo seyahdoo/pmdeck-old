@@ -42,13 +42,19 @@ class DeviceManager:
 
         deck = Deck(client_socket)
         self.on_connected(deck)
+        old_data = ""
 
         while True:
             try:
                 data = client_socket.recv(1024)
-                msg = data.decode('utf-8')
+                msg = old_data + data.decode('utf-8')
                 cmd = msg.split(';')
-                deck.on_key_status_change(cmd[0], cmd[1])
+                if len(cmd) >= 1:
+                    old_data = cmd[1]
+                else:
+                    old_data = ""
+                spl = cmd[0].split(',')
+                deck.on_key_status_change(spl[0], spl[1])
             except Exception as e:
                 print(e)
                 self.on_disconnected(deck)
@@ -108,6 +114,7 @@ class Deck:
             encoded = base64.b64encode(open(image_path, "rb").read())
             encoded = (key + ";").encode('utf-8') + encoded + "~".encode('utf-8')
             self.client_sock.send(encoded)
+
         else:
             print("please give a png file")
         return

@@ -24,6 +24,7 @@
         <script type="text/javascript" src="socket.js"></script>
         <script src="js/jquery-3.3.1.min.js"></script>
         <script src="js/encoding.js"></script>
+        <script src="js/semaphore.js"></script>
         <script>
             
             document.addEventListener('touchmove', function(e) { e.preventDefault(); }, false);
@@ -36,9 +37,11 @@
                 
             }                
             
+            var sending = false;
+
             var onPressedEvent = function(key) {
                 if (socket.state == Socket.State.OPENED) {
-                    var dataString = key +";"+ 0;
+                    var dataString = key +","+ 0 +";";
                     var data = new Uint8Array(dataString.length);
                     for (var i = 0; i < data.length; i++) {
                         data[i] = dataString.charCodeAt(i);
@@ -49,7 +52,7 @@
             
             var onReleasedEvent = function(key) {
                 if (socket.state == Socket.State.OPENED) {
-                    var dataString = key +";"+ 1;
+                    var dataString = key +","+ 1 +";";
                     var data = new Uint8Array(dataString.length);
                     for (var i = 0; i < data.length; i++) {
                         data[i] = dataString.charCodeAt(i);
@@ -62,6 +65,7 @@
             
             var current_reading_string = "";
             var current_key = 0;
+            var stream = "";
 
             var onDeviceReady = function() {
                 console.log("device   ready");
@@ -72,6 +76,9 @@
                     // invoked after new batch of data is received (typed array of bytes Uint8Array)
                     
                     dstr = new TextDecoder("utf-8").decode(data);
+                    stream += dstr;
+
+                    
 
                     if (current_reading_string == ""){
                         var cmd = dstr.split(';');

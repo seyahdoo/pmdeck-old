@@ -21,8 +21,8 @@
             "cz.blocshop.socketsforcordova": {}
         },
         "platforms": [
-            "android",
-            "browser"
+            "browser",
+            "android"
         ]
     }
 }
