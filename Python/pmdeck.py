@@ -1,6 +1,7 @@
 
 import socket
 import threading
+import base64
 
 
 class DeviceManager:
@@ -8,6 +9,7 @@ class DeviceManager:
     def __init__(self):
 
         self.connected_callback = None
+        self.disconnected_callback = None
 
         threading.Thread(
             target=self.connector_listener
@@ -38,7 +40,7 @@ class DeviceManager:
 
     def deck_listener(self, client_socket):
 
-        deck = Deck()
+        deck = Deck(client_socket)
         self.on_connected(deck)
 
         while True:
@@ -59,14 +61,17 @@ class DeviceManager:
         return
 
     def on_connected(self, deck):
-        print("Connected")
-        self.connected_callback()
+        if self.connected_callback:
+            self.connected_callback(deck)
         return
 
-
+    def set_on_disconnected_callback(self, callback):
+        self.disconnected_callback = callback
+        return
 
     def on_disconnected(self, deck):
-        print("Disconnected")
+        if self.disconnected_callback:
+            self.disconnected_callback(deck)
         return
 
 
@@ -83,9 +88,10 @@ class Deck:
 
     KEY_IMAGE_SIZE = KEY_PIXEL_WIDTH * KEY_PIXEL_HEIGHT * KEY_PIXEL_DEPTH
 
-    def __init__(self, socket):
+    def __init__(self, client_sock: socket.socket):
 
-        self.socket = socket;
+        self.key_callback = None
+        self.client_sock: socket.socket = client_sock;
 
         return
 
@@ -97,8 +103,13 @@ class Deck:
 
         return
 
-    def set_key_image_path(self, key, image_path):
-
+    def set_key_image_path(self, key, image_path: str):
+        if image_path.endswith(".png"):
+            encoded = base64.b64encode(open(image_path, "rb").read())
+            encoded = (key + ";").encode('utf-8') + encoded + "~".encode('utf-8')
+            self.client_sock.send(encoded)
+        else:
+            print("please give a png file")
         return
 
     def set_key_image(self, key, image_buffer):
@@ -106,10 +117,12 @@ class Deck:
         return
 
     def set_key_callback(self, callback):
-
+        self.key_callback = callback;
         return
 
     def on_key_status_change(self, key, status):
         print("Key Status {}, {}".format(key, status));
+        if self.key_callback:
+            self.key_callback(self, key, status)
         return
 
