@@ -11,8 +11,6 @@ class DeviceManager:
         self.connected_callback = None
         self.disconnected_callback = None
 
-
-
         threading.Thread(
             target=self.connector_listener
         ).start()
@@ -50,7 +48,6 @@ class DeviceManager:
             try:
                 data = client_socket.recv(1024)
                 stream = data.decode('utf-8')
-                print(stream)
                 for cmd in list(filter(None, stream.split(';'))):
                     spl = cmd.split(',')
                     deck.on_key_status_change(spl[0], spl[1])
@@ -123,7 +120,7 @@ class Deck:
         return
 
     def set_key_image_base64(self, key, base64_string):
-        encoded = (key + ";").encode('utf-8') + base64_string + "\n".encode('utf-8')
+        encoded = (str(key) + ";").encode('utf-8') + base64_string + "\n".encode('utf-8')
         self.client_sock.send(encoded)
         return
 
@@ -132,7 +129,6 @@ class Deck:
         return
 
     def on_key_status_change(self, key, status):
-        print("Key Status {}, {}".format(key, status));
         if self.key_callback:
             self.key_callback(self, key, status)
         return
