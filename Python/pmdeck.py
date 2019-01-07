@@ -103,7 +103,6 @@ class Deck:
         return
 
     def __del__(self):
-
         return
 
     def _read(self):

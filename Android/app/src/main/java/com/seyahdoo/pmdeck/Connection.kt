@@ -13,12 +13,17 @@ class Connection {
 
     var socket: Socket? = null;
     var writer: PrintWriter? = null;
-    var inputReader: BufferedReader? = null;
 
     val ip = "192.168.1.33"
     val port = 23997
 
     val lock: Lock = ReentrantLock()
+
+    class ShouldContinue(){
+        var cont:Boolean = true;
+    }
+
+    private var lastReaderContinue: ShouldContinue? = null;
 
     fun openConnection() {
 
@@ -26,25 +31,25 @@ class Connection {
             try {
                 socket = Socket(ip, port)
                 writer = PrintWriter(socket!!.getOutputStream())
-                inputReader = BufferedReader(InputStreamReader(socket?.getInputStream()));
-
-                reader()
-
+                val inputReader = BufferedReader(InputStreamReader(socket?.getInputStream()));
+                reader(ShouldContinue(), inputReader)
             } catch (e: IOException) {
                 e.printStackTrace()
             }
 
         }
 
-
-
     }
 
     fun closeConnection(){
         doAsync {
-            inputReader?.close()
+            lastReaderContinue?.cont = false;
             writer?.close()
             socket?.close()
+
+            lastReaderContinue = null;
+            writer = null
+            socket = null
         }
     }
 
@@ -58,10 +63,11 @@ class Connection {
         OnDataCallback = listener;
     }
 
-    fun reader() {
+    fun reader(shouldContinue: ShouldContinue, bufreader: BufferedReader) {
+        lastReaderContinue = shouldContinue
         doAsync {
-            while (true) {
-                val input: String = inputReader?.readLine() ?: continue
+            while (shouldContinue.cont) {
+                val input: String = bufreader.readLine() ?: continue
                 OnDataCallback?.invoke(input)
             }
         }

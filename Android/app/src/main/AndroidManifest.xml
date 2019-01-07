@@ -9,11 +9,12 @@
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
-            android:theme="@style/AppTheme">
+            android:theme="@style/AppTheme"
+            android:configChanges="keyboardHidden|orientation">
         <activity
                 android:name=".MainActivity"
                 android:label="@string/app_name"
-                android:screenOrientation="landscape"
+                android:screenOrientation="sensorLandscape"
                 android:launchMode="singleInstance"
                 android:configChanges="orientation|keyboardHidden|screenSize">
             <intent-filter>
