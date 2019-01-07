@@ -70,7 +70,8 @@ class MainActivity : AppCompatActivity() {
             con.openConnection()
             return true
         }else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
-            //setSystemUIEnabled(false);
+            swap = !swap;
+            setSystemUIEnabled(swap);
             return true
         }
 
@@ -85,13 +86,24 @@ class MainActivity : AppCompatActivity() {
 
         if (enabled){
             //Not working :\
+            //Show
+            var proc: Process? = null
             try {
-                val proc =
-                    Runtime.getRuntime().exec(arrayOf("am", "startservice", "-n", "com.android.systemui/.SystemUIService"))
-                proc.waitFor()
+                proc = Runtime.getRuntime()
+                    .exec(arrayOf("su", "-c", "am startservice -n com.android.systemui/.SystemUIService"))
             } catch (e: Exception) {
+                Log.w("Main", "Failed to kill task bar (1).")
                 e.printStackTrace()
             }
+
+            try {
+                proc!!.waitFor()
+            } catch (e: Exception) {
+                Log.w("Main", "Failed to kill task bar (2).")
+                e.printStackTrace()
+            }
+
+
         }else{
             try {
                 var ProcID = "42"

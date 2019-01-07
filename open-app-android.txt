@@ -1,0 +1,1 @@
+ adb shell am start -n com.seyahdoo.pmdeck/com.seyahdoo.pmdeck.MainActivity
