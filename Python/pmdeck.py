@@ -11,6 +11,8 @@ class DeviceManager:
         self.connected_callback = None
         self.disconnected_callback = None
 
+
+
         threading.Thread(
             target=self.connector_listener
         ).start()
@@ -42,19 +44,17 @@ class DeviceManager:
 
         deck = Deck(client_socket)
         self.on_connected(deck)
-        old_data = ""
+        stream = ""
 
         while True:
             try:
                 data = client_socket.recv(1024)
-                msg = old_data + data.decode('utf-8')
-                cmd = msg.split(';')
-                if len(cmd) >= 1:
-                    old_data = cmd[1]
-                else:
-                    old_data = ""
-                spl = cmd[0].split(',')
-                deck.on_key_status_change(spl[0], spl[1])
+                stream = data.decode('utf-8')
+                print(stream)
+                for cmd in list(filter(None, stream.split(';'))):
+                    spl = cmd.split(',')
+                    deck.on_key_status_change(spl[0], spl[1])
+
             except Exception as e:
                 print(e)
                 self.on_disconnected(deck)
@@ -67,6 +67,7 @@ class DeviceManager:
         return
 
     def on_connected(self, deck):
+        deck.reset()
         if self.connected_callback:
             self.connected_callback(deck)
         return
@@ -109,18 +110,22 @@ class Deck:
 
         return
 
+    def reset(self):
+        for i in range(0, 15):
+            self.set_key_image_path(str(i), "Assets/empty.png")
+        return
+
     def set_key_image_path(self, key, image_path: str):
         if image_path.endswith(".png"):
             encoded = base64.b64encode(open(image_path, "rb").read())
-            encoded = (key + ";").encode('utf-8') + encoded + "~".encode('utf-8')
-            self.client_sock.send(encoded)
-
+            self.set_key_image_base64(key,encoded)
         else:
             print("please give a png file")
         return
 
-    def set_key_image(self, key, image_buffer):
-
+    def set_key_image_base64(self, key, base64_string):
+        encoded = (key + ";").encode('utf-8') + base64_string + "\n".encode('utf-8')
+        self.client_sock.send(encoded)
         return
 
     def set_key_callback(self, callback):

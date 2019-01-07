@@ -6,9 +6,9 @@ from threading import Event
 def key_callback(deck, key, status):
 
     if status == "0":
-        deck.set_key_image_path(key,"Assets/Pressed.png")
+        deck.set_key_image_path(key,"Assets/pressed-min.png")
     else:
-        deck.set_key_image_path(key,"Assets/Released.png")
+        deck.set_key_image_path(key,"Assets/released-min.png")
 
     return
 
