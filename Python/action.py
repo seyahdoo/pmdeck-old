@@ -4,7 +4,7 @@ class Action:
 
     def __init__(self,deck):
 
-        self.image_path = "Assets/pressed-min.png"
+        self.image_path = "Assets/released-min.png"
         self.is_visible = False
         self.current_space = 0
         self.is_pressed = False

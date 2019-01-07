@@ -1,6 +1,7 @@
 
 
 from action import Action
+import subprocess
 
 
 class MicAction(Action):
@@ -9,21 +10,20 @@ class MicAction(Action):
         super().__init__(deck)
 
         self.enabled = True
-        self.image_path = "Assets/pressed-min.png"
+        self.image_path = "Assets/Keys/mic-on.png"
 
         return
 
     def on_pressed(self):
         super(MicAction, self).on_pressed()
 
-        print("pressed....")
-
         self.enabled = not self.enabled
 
         if self.enabled:
-            self.set_image_path("Assets/pressed-min.png")
+            self.set_image_path("Assets/Keys/mic-on.png")
+            subprocess.call(["C:/Program Files/AutoHotkey/AutoHotkey.exe", "C:/AHK/Functions/unmute_mic.ahk"])
         else:
-            self.set_image_path("Assets/released-min.png")
-
+            self.set_image_path("Assets/Keys/mic-off.png")
+            subprocess.call(["C:\\Program Files\\AutoHotkey\\AutoHotkey.exe", "C:\\AHK\\Functions\\mute_mic.ahk"])
         return
 
