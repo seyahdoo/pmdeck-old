@@ -1,0 +1,39 @@
+{
+  "Settings": {
+    "GridWidth":5,
+    "GridHeight":3,
+    "MarginX":1.3,
+    "MarginY":1.3,
+    "FullScreen":true,
+    "SetLauncher":false
+  },
+  "Buttons": {
+    "btnID":{
+      "ActionType":"OpenFolder",
+      "Args":{
+        "FolderID":"Folder1"
+      }
+    },
+    "btn2":{
+      "ActionType":"CustomInternalPython",
+      "Args":{
+        "FolderLocation":"Actions/CustomWOW"
+      }
+    },
+    "btn3":{
+      "ActionType":"CustomExternalPython",
+      "Args":{
+        "PythonPath":"python",
+        "FolderLocation":"Actions/CustomPip"
+      }
+    }
+  },
+  "Folders": {
+    "folderID":[
+      "btnID",
+      "btnFolder1",
+      "btnMute",
+      ""
+    ]
+  }
+}
