@@ -1,6 +1,7 @@
 from Action.action import Action
 import subprocess
 
+
 class MicAction(Action):
 
     def initialize(self):
