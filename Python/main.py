@@ -20,9 +20,9 @@ def on_connected_callback(deck):
     deck.set_key_callback(key_callback)
 
     root_folder = Folder(deck)
-    root_folder.set_action(0, MicAction(deck))
-    root_folder.set_action(1, TestAction(deck))
-    root_folder.set_action(14, TestAction(deck))
+    root_folder.set_action(2, MicAction(deck))
+    for i in range(1,15,2):
+        root_folder.set_action(i, TestAction(deck))
     root_folder.open()
 
     return
