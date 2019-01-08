@@ -1,22 +1,14 @@
-
-
-from action import Action
+from Action.action import Action
 import subprocess
-
 
 class MicAction(Action):
 
-    def __init__(self, deck):
-        super().__init__(deck)
-
+    def initialize(self):
         self.enabled = True
-        self.image_path = "Assets/Keys/mic-on.png"
-
+        self.set_image_path("Assets/Keys/mic-on.png")
         return
 
     def on_pressed(self):
-        super(MicAction, self).on_pressed()
-
         self.enabled = not self.enabled
 
         if self.enabled:

@@ -1,6 +1,6 @@
 
-from .action import Action
-from .folder import Folder
+from Action.action import Action
+from Action.folder import Folder
 
 
 class OpenFolderAction(Action):

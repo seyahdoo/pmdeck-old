@@ -1,5 +1,5 @@
 
-from action import Action
+from Action.action import Action
 
 class Folder:
 
@@ -23,20 +23,19 @@ class Folder:
         # for each action in actions, draw action
         for i in range(0,len(self.actions)):
             if self.actions[i]:
-                self.actions[i].set_visible(i)
+                self.actions[i]._set_visible(i)
 
         # hook layout as current folder
-        global current_folder
-        current_folder = self
+        self.deck.current_folder = self
         return
 
 
     def button_pressed(self, space_index:int):
         if self.actions[int(space_index)]:
-            self.actions[int(space_index)].on_pressed()
+            self.actions[int(space_index)]._pressed()
 
 
     def button_released(self, space_index:int):
         if self.actions[int(space_index)]:
-            self.actions[int(space_index)].on_released()
+            self.actions[int(space_index)]._released()
 
