@@ -13,6 +13,9 @@ import javax.jmdns.ServiceEvent;
 import javax.jmdns.ServiceInfo;
 import javax.jmdns.ServiceListener;
 
+
+//Source: https://github.com/alwx/android-jmdns/blob/master/LocalCommunication/src/main/java/me/alwx/localcommunication/connection/NetworkDiscovery.java
+
 /**
  * @author alwx
  * @version 1.0
