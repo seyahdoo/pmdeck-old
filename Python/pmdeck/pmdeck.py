@@ -2,7 +2,11 @@
 import socket
 import threading
 import base64
-
+import zeroconf
+# from pmdeck import pybonjour
+import atexit
+import sys
+import time
 
 class DeviceManager:
 
@@ -19,15 +23,72 @@ class DeviceManager:
 
     def connector_listener(self):
         bind_ip = '0.0.0.0'
-        bind_port = 23997
+        # bind_port = 23997
 
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.bind((bind_ip, bind_port))
-        server.listen(5)  # max backlog of connections
-        print('Listening on {}:{}'.format(bind_ip, bind_port))
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.bind((bind_ip, 0))
+        server_socket.listen(5)  # max backlog of connections
+        local_ip = ""
+        port = server_socket.getsockname()[1]
+        try:
+            local_ip = (([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")] or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) + ["no IP found"])[0]
+        except:
+            print("expttt")
+
+        print('Listening on {}:{}'.format(local_ip, port))
+
+        desc = {}
+        info = zeroconf.ServiceInfo("_pmdeck._tcp.local.",
+                            "PMDeck._pmdeck._tcp.local.",
+                                    socket.inet_aton(local_ip), port, 0, 0,
+                                    desc, local_ip +".")
+
+        z = zeroconf.Zeroconf()
+        z.register_service(info)
+
+        @atexit.register
+        def _unregister():
+            print("unregistering")
+            z.unregister_all_services()
+
+        print("registered")
+
+
+
+        # name = "_pmdeck._tcp."
+        # regtype = "_pmdeck._tcp."
+        #
+        # def register_callback(sdRef, flags, errorCode, name, regtype, domain):
+        #     if errorCode == pybonjour.kDNSServiceErr_NoError:
+        #         print('Registered service:')
+        #         print('  name    = '+ name)
+        #         print('  regtype = '+ regtype)
+        #         print('  domain  = '+ domain)
+        #         print("Local mDNS is started, domain is " + local_ip)
+        #
+        # sdRef = pybonjour.DNSServiceRegister(name=name,
+        #                                      regtype=regtype,
+        #                                      port=port,
+        #                                      callBack=register_callback,
+        #                                      host=local_ip,
+        #                                      domain=regtype)
+        #
+        # def register_listener():
+        #     try:
+        #         try:
+        #             while True:
+        #                 ready = select.select([sdRef], [], [])
+        #                 if sdRef in ready[0]:
+        #                     pybonjour.DNSServiceProcessResult(sdRef)
+        #         except KeyboardInterrupt:
+        #             pass
+        #     finally:
+        #         sdRef.close()
+        #
+        # threading.Thread(target=register_listener).start()
 
         while True:
-            client_sock, address = server.accept()
+            client_sock, address = server_socket.accept()
             print('Accepted connection from {}:{}'.format(address[0], address[1]))
             client_handler = threading.Thread(
                 target=self.deck_listener,

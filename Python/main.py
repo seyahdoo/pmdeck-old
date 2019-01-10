@@ -5,6 +5,12 @@ from Action.folder import Folder
 from Action.Actions.mic_action import MicAction
 from Action.Actions.test_action import TestAction
 
+import atexit
+import threading
+import time
+import sys
+import os
+
 def key_callback(deck, key, status):
 
     if status == "0":
@@ -20,7 +26,7 @@ def on_connected_callback(deck):
     deck.set_key_callback(key_callback)
 
     root_folder = Folder(deck)
-    root_folder.set_action(2, MicAction(deck))
+    root_folder.set_action(12, MicAction(deck))
     for i in range(1,15,2):
         root_folder.set_action(i, TestAction(deck))
     root_folder.open()
@@ -35,3 +41,5 @@ if __name__ == "__main__":
     manager.set_on_connected_callback(on_connected_callback)
 
     Event().wait()
+
+

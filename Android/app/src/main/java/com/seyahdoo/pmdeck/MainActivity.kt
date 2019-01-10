@@ -1,7 +1,12 @@
 package com.seyahdoo.pmdeck
 
+import android.content.Context
+import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.nsd.NsdManager
+import android.net.nsd.NsdServiceInfo
+import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Base64
@@ -11,6 +16,23 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageButton
 import kotlinx.android.synthetic.main.activity_main.*
+import it.ennova.zerxconf.ZeRXconf
+import java.net.InetAddress
+import android.content.Context.NSD_SERVICE
+import android.net.wifi.WifiInfo
+import android.net.wifi.WifiManager
+import android.support.v4.content.ContextCompat.getSystemService
+import org.jetbrains.anko.doAsync
+import rx.Subscription
+import java.util.jar.Attributes
+import javax.jmdns.JmDNS
+import java.io.IOException
+import java.net.NetworkInterface
+import java.net.UnknownHostException
+import javax.jmdns.JmmDNS
+import javax.jmdns.ServiceEvent
+import javax.jmdns.ServiceListener
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,10 +63,30 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-        con.openConnection()
+//        ZeRXconf.startDiscovery(this, "_pmdeck._tcp.").subscribe({
+//            Log.e("Discovery","Found a new service ${it.address!!}:${it.servicePort}")
+//            con.closeConnection()
+//            con.openConnection(it.address!!, it.servicePort)
+//        }, {
+//            Log.e("Main Activity", it.toString())
+//        })
+
+        val context = this
+
+        doAsync {
+            val d = NetworkDiscovery(context)
+            d.findServers {
+                Log.e("Discovery", "Found ${it.inetAddresses}:${it.port}")
+                con.closeConnection()
+                con.openConnection(it.inetAddresses[0],it.port)
+            }
+        }
+
+
+
 
         buttonList.forEachIndexed{ index, element ->
-            element.setOnTouchListener { v:View, e:MotionEvent ->
+            element.setOnTouchListener { _:View, e:MotionEvent ->
                 when (e.action){
                     MotionEvent.ACTION_DOWN -> {
                         con.sendMessage("$index,0;")
@@ -67,7 +109,7 @@ class MainActivity : AppCompatActivity() {
 
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP){
             con.closeConnection()
-            con.openConnection()
+            //con.openConnection()
             return true
         }else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
             swap = !swap;

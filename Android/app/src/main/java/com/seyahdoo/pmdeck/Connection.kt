@@ -2,6 +2,7 @@ package com.seyahdoo.pmdeck
 
 import org.jetbrains.anko.doAsync
 import java.io.*
+import java.net.InetAddress
 import java.net.Socket
 import java.util.*
 import java.util.concurrent.locks.Lock
@@ -14,10 +15,10 @@ class Connection {
     var socket: Socket? = null;
     var writer: PrintWriter? = null;
 
-    val ip = "192.168.1.33"
-    val port = 23997
-
     val lock: Lock = ReentrantLock()
+
+    //var ip: InetAddress? = null
+    //var port: Int = 0
 
     class ShouldContinue(){
         var cont:Boolean = true;
@@ -25,7 +26,7 @@ class Connection {
 
     private var lastReaderContinue: ShouldContinue? = null;
 
-    fun openConnection() {
+    fun openConnection(ip:InetAddress, port:Int) {
 
         doAsync {
             try {
