@@ -27,8 +27,8 @@ def on_connected_callback(deck):
 
     root_folder = Folder(deck)
     root_folder.set_action(12, MicAction(deck))
-    for i in range(1,15,2):
-        root_folder.set_action(i, TestAction(deck))
+    # for i in range(1,15,2):
+    #     root_folder.set_action(i, TestAction(deck))
     root_folder.open()
 
     return

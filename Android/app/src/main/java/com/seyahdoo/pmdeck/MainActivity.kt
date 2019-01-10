@@ -108,8 +108,7 @@ class MainActivity : AppCompatActivity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
 
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP){
-            con.closeConnection()
-            //con.openConnection()
+            RebirthHelper.doRestart(this)
             return true
         }else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
             swap = !swap;
@@ -119,6 +118,8 @@ class MainActivity : AppCompatActivity() {
 
         return true
     }
+
+
 
     /**
      * Uses Root access to enable and disable SystemUI.
