@@ -1,0 +1,45 @@
+Device on Sync Ready State (Discovering Server Connections)
+Server on Sync Ready State (Listener is on)
+Device Connects to server Requests Sync
+Device Sends its UniqueID
+Server Generates a pasword Sends to Device (Server Saves UID with password)
+From This point on server only talks to device with this password (Device only reads Messages with password attached)
+
+
+Server did not connected to all its peers, so server's listener is on
+A device connects to server, Sends its UniqueID
+UID was saved on server,
+Server connects to it using password
+
+
+Server did not connected to all its peers, so server's listener is on
+A device connects to server, Sends its UniqueID
+UID was not saved on server,
+Server closes connection
+
+Server connected to all its peers, server listener is off
+
+
+Client is Synced->
+Client is not Connected, so it discovers servers
+for each server it discovers it sends its UID
+>if it hears back its password it stops discovering servers
+>if it hears back something else, it disconnects
+
+
+Deck is not Synced->
+Deck is not connected, so it discovers servers
+for each server (and one at a time) it tries to get synced
+Sends Sync:UID
+Deck can reply -> REJECT, rejects Sync Operation, Dismiss and continue with another server
+Deck can reply -> SYNCTRY:6pass(6 digit password to show at screen to get conformation)
+User sees 6pass in Server UI and Deck UI
+User can press Accept -> Deck Sends ACCEPT; Deck Stores 6pass in application storage. Deck is now Synced
+User can press Reject -> rejects Sync Operation, Dismiss and continue with another server
+
+
+
+
+
+
+
