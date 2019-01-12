@@ -37,9 +37,11 @@ class DeviceManager:
 
         print('Listening on {}:{}'.format(local_ip, port))
 
+        service_name = local_ip + ":" + str(port) + "._pmdeck._tcp.local."
+
         desc = {}
         info = zeroconf.ServiceInfo("_pmdeck._tcp.local.",
-                            "PMDeck._pmdeck._tcp.local.",
+                                    service_name,
                                     socket.inet_aton(local_ip), port, 0, 0,
                                     desc, local_ip +".")
 
@@ -89,7 +91,7 @@ class Deck:
         self.id = None
         self.key_callback = None
         self.client_socket: socket.socket = client_socket;
-
+        self.disconnected = False
         return
 
     def __del__(self):
@@ -97,15 +99,24 @@ class Deck:
 
     def _read(self):
 
+        self.client_socket.settimeout(10)
+
         def listener():
             stream = ""
             while True:
                 try:
                     data = self.client_socket.recv(1024)
                     stream = data.decode('utf-8')
-                    for cmd in list(filter(None, stream.split(';'))):
-                        spl = cmd.split(',')
-                        self.on_key_status_change(spl[0], spl[1])
+                    print(stream)
+                    for msg in list(filter(None, stream.split(';'))):
+                        spl = msg.split(":")
+                        cmd = spl[0]
+
+                        if(cmd == "PONG"):
+                            pass
+                        elif(cmd == "BTNEVENT"):
+                            args = spl[1].split(",")
+                            self.on_key_status_change(args[0], args[1])
 
                 except Exception as e:
                     print(e)
@@ -113,11 +124,29 @@ class Deck:
                     return
 
         threading.Thread(target=listener).start()
+
+        def pinger():
+            while True:
+                try:
+                    self.client_socket.send("PING;\n".encode('utf-8'))
+                    time.sleep(3)
+                except Exception as e:
+                    print(e)
+                    self.disconnect()
+                    return
+
+        threading.Thread(target=pinger).start()
+
         return
 
     def disconnect(self):
+        if self.disconnected:
+            return
+
         print("Deck Disconnected")
         # TODO
+
+        self.disconnected = True
         return
 
     def reset(self):
@@ -134,7 +163,7 @@ class Deck:
         return
 
     def set_key_image_base64(self, key, base64_string):
-        encoded = (str(key) + ";").encode('utf-8') + base64_string + "\n".encode('utf-8')
+        encoded = ("IMAGE:" + str(key) + ",").encode('utf-8') + base64_string + ";\n".encode('utf-8')
         self.client_socket.send(encoded)
         return
 
