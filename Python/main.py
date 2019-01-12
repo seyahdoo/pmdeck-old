@@ -33,12 +33,15 @@ def on_connected_callback(deck):
 
     return
 
+# Decorators
 
 if __name__ == "__main__":
 
     manager = pmdeck.DeviceManager()
 
     manager.set_on_connected_callback(on_connected_callback)
+
+    manager.start()
 
     Event().wait()
 

@@ -11,14 +11,14 @@ import time
 class DeviceManager:
 
     def __init__(self):
-
         self.connected_callback = None
         self.disconnected_callback = None
+        return
 
+    def start(self):
         threading.Thread(
             target=self.connector_listener
         ).start()
-
         return
 
     def connector_listener(self):
@@ -53,70 +53,12 @@ class DeviceManager:
 
         print("registered")
 
-
-
-        # name = "_pmdeck._tcp."
-        # regtype = "_pmdeck._tcp."
-        #
-        # def register_callback(sdRef, flags, errorCode, name, regtype, domain):
-        #     if errorCode == pybonjour.kDNSServiceErr_NoError:
-        #         print('Registered service:')
-        #         print('  name    = '+ name)
-        #         print('  regtype = '+ regtype)
-        #         print('  domain  = '+ domain)
-        #         print("Local mDNS is started, domain is " + local_ip)
-        #
-        # sdRef = pybonjour.DNSServiceRegister(name=name,
-        #                                      regtype=regtype,
-        #                                      port=port,
-        #                                      callBack=register_callback,
-        #                                      host=local_ip,
-        #                                      domain=regtype)
-        #
-        # def register_listener():
-        #     try:
-        #         try:
-        #             while True:
-        #                 ready = select.select([sdRef], [], [])
-        #                 if sdRef in ready[0]:
-        #                     pybonjour.DNSServiceProcessResult(sdRef)
-        #         except KeyboardInterrupt:
-        #             pass
-        #     finally:
-        #         sdRef.close()
-        #
-        # threading.Thread(target=register_listener).start()
-
         while True:
-            client_sock, address = server_socket.accept()
+            client_socket, address = server_socket.accept()
             print('Accepted connection from {}:{}'.format(address[0], address[1]))
-            client_handler = threading.Thread(
-                target=self.deck_listener,
-                args=(client_sock,)
-                # without comma you'd get a... TypeError: handle_client_connection() argument after * must be a sequence, not _socketobject
-            )
-            client_handler.start()
-
-        return
-
-    def deck_listener(self, client_socket):
-
-        deck = Deck(client_socket)
-        self.on_connected(deck)
-        stream = ""
-
-        while True:
-            try:
-                data = client_socket.recv(1024)
-                stream = data.decode('utf-8')
-                for cmd in list(filter(None, stream.split(';'))):
-                    spl = cmd.split(',')
-                    deck.on_key_status_change(spl[0], spl[1])
-
-            except Exception as e:
-                print(e)
-                self.on_disconnected(deck)
-                return
+            deck = Deck(client_socket)
+            self.on_connected(deck)
+            deck._read()
 
         return
 
@@ -142,21 +84,11 @@ class DeviceManager:
 
 class Deck:
 
-    KEY_COUNT = 15
-    KEY_COLS = 5
-    KEY_ROWS = 3
+    def __init__(self, client_socket: socket.socket):
 
-    KEY_PIXEL_WIDTH = 72
-    KEY_PIXEL_HEIGHT = 72
-    KEY_PIXEL_DEPTH = 3
-    KEY_PIXEL_ORDER = "BGR"
-
-    KEY_IMAGE_SIZE = KEY_PIXEL_WIDTH * KEY_PIXEL_HEIGHT * KEY_PIXEL_DEPTH
-
-    def __init__(self, client_sock: socket.socket):
-
+        self.id = None
         self.key_callback = None
-        self.client_sock: socket.socket = client_sock;
+        self.client_socket: socket.socket = client_socket;
 
         return
 
@@ -165,6 +97,27 @@ class Deck:
 
     def _read(self):
 
+        def listener():
+            stream = ""
+            while True:
+                try:
+                    data = self.client_socket.recv(1024)
+                    stream = data.decode('utf-8')
+                    for cmd in list(filter(None, stream.split(';'))):
+                        spl = cmd.split(',')
+                        self.on_key_status_change(spl[0], spl[1])
+
+                except Exception as e:
+                    print(e)
+                    self.disconnect()
+                    return
+
+        threading.Thread(target=listener).start()
+        return
+
+    def disconnect(self):
+        print("Deck Disconnected")
+        # TODO
         return
 
     def reset(self):
@@ -182,7 +135,7 @@ class Deck:
 
     def set_key_image_base64(self, key, base64_string):
         encoded = (str(key) + ";").encode('utf-8') + base64_string + "\n".encode('utf-8')
-        self.client_sock.send(encoded)
+        self.client_socket.send(encoded)
         return
 
     def set_key_callback(self, callback):
@@ -193,4 +146,5 @@ class Deck:
         if self.key_callback:
             self.key_callback(self, key, status)
         return
+
 
