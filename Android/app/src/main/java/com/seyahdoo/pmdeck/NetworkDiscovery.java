@@ -65,16 +65,20 @@ public class NetworkDiscovery {
         mJmDNS.addServiceListener(TYPE, mServiceListener = new ServiceListener() {
             @Override
             public void serviceAdded(ServiceEvent serviceEvent) {
+                Log.d("Service","Added");
                 ServiceInfo info = mJmDNS.getServiceInfo(serviceEvent.getType(), serviceEvent.getName());
                 listener.onFound(info);
             }
 
             @Override
             public void serviceRemoved(ServiceEvent serviceEvent) {
+                Log.d("Service","Removed");
+
             }
 
             @Override
             public void serviceResolved(ServiceEvent serviceEvent) {
+                Log.d("Service","Resolved");
                 mJmDNS.requestServiceInfo(serviceEvent.getType(), serviceEvent.getName(), 1);
             }
         });

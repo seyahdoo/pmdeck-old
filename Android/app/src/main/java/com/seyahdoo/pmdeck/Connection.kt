@@ -2,6 +2,7 @@ package com.seyahdoo.pmdeck
 
 import org.jetbrains.anko.doAsync
 import java.io.*
+import java.lang.Exception
 import java.net.InetAddress
 import java.net.Socket
 import java.util.*
@@ -31,6 +32,7 @@ class Connection {
         doAsync {
             try {
                 socket = Socket(ip, port)
+                socket?.soTimeout = 10000
                 writer = PrintWriter(socket!!.getOutputStream())
                 val inputReader = BufferedReader(InputStreamReader(socket?.getInputStream()));
                 reader(ShouldContinue(), inputReader)
@@ -74,17 +76,12 @@ class Connection {
         }
     }
 
-    val queue: Queue<String> = ArrayDeque<String>()
-
     fun sendMessage(message:String){
-        queue.add(message)
-
-        doAsync {
-            lock.withLock {
-                writer?.write(queue.remove());
-                writer?.flush()
-                null
-            }
+        try{
+            writer?.write(message)
+            writer?.flush()
+        }catch (e: Exception){
+            closeConnection()
         }
 
     }

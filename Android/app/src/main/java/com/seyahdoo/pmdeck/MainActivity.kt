@@ -1,12 +1,7 @@
 package com.seyahdoo.pmdeck
 
-import android.content.Context
-import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.nsd.NsdManager
-import android.net.nsd.NsdServiceInfo
-import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Base64
@@ -16,22 +11,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageButton
 import kotlinx.android.synthetic.main.activity_main.*
-import it.ennova.zerxconf.ZeRXconf
-import java.net.InetAddress
-import android.content.Context.NSD_SERVICE
-import android.net.wifi.WifiInfo
-import android.net.wifi.WifiManager
-import android.support.v4.content.ContextCompat.getSystemService
 import org.jetbrains.anko.doAsync
-import rx.Subscription
-import java.util.jar.Attributes
-import javax.jmdns.JmDNS
-import java.io.IOException
-import java.net.NetworkInterface
-import java.net.UnknownHostException
-import javax.jmdns.JmmDNS
-import javax.jmdns.ServiceEvent
-import javax.jmdns.ServiceListener
 
 
 class MainActivity : AppCompatActivity() {
@@ -45,31 +25,31 @@ class MainActivity : AppCompatActivity() {
         val buttonList: List<ImageButton> = listOf(btn0,btn1,btn2,btn3,btn4,btn5,btn6,btn7,btn8,btn9,btn10,btn11,btn12,btn13,btn14);
 
         con.setOnDataListener {
-
-            val spl = it.split(";")
-
-            try {
-                val image = buttonList[(spl[0]).toInt()]
-                val decodedString = Base64.decode(spl[1], Base64.DEFAULT);
-                var bitmap: Bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
-                bitmap = Bitmap.createScaledBitmap(bitmap, image.measuredWidth, image.measuredHeight, true);
-                runOnUiThread {
-                    image.setImageBitmap(bitmap)
+            for (msg in it.split(";")){
+                val spl = msg.split(":");
+                val cmd = spl[0]
+                when (cmd){
+                    "IMAGE" -> {
+                        try {
+                            val args = spl[1].split(",")
+                            val image = buttonList[(args[0]).toInt()]
+                            val decodedString = Base64.decode(args[1], Base64.DEFAULT);
+                            var bitmap: Bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
+                            bitmap = Bitmap.createScaledBitmap(bitmap, image.measuredWidth, image.measuredHeight, true);
+                            runOnUiThread {
+                                image.setImageBitmap(bitmap)
+                            }
+                        }catch (e: Exception){
+                            e.printStackTrace()
+                        }
+                    }
+                    "PING" -> {
+                        Log.e("PINGING","PONG!")
+                        con.sendMessage("PONG;")
+                    }
                 }
-
-            }catch (e: Exception){
-                e.printStackTrace()
             }
-
         }
-
-//        ZeRXconf.startDiscovery(this, "_pmdeck._tcp.").subscribe({
-//            Log.e("Discovery","Found a new service ${it.address!!}:${it.servicePort}")
-//            con.closeConnection()
-//            con.openConnection(it.address!!, it.servicePort)
-//        }, {
-//            Log.e("Main Activity", it.toString())
-//        })
 
         val context = this
 
@@ -89,10 +69,10 @@ class MainActivity : AppCompatActivity() {
             element.setOnTouchListener { _:View, e:MotionEvent ->
                 when (e.action){
                     MotionEvent.ACTION_DOWN -> {
-                        con.sendMessage("$index,0;")
+                        con.sendMessage("BTNEVENT:$index,0;")
                     }
                     MotionEvent.ACTION_UP -> {
-                        con.sendMessage("$index,1;")
+                        con.sendMessage("BTNEVENT:$index,1;")
                     }
                 }
 
