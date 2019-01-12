@@ -1,21 +1,27 @@
 Device on Sync Ready State (Discovering Server Connections)
 Server on Sync Ready State (Listener is on)
 Device Connects to server Requests Sync
+-> SYNCREQ:UID;
 Device Sends its UniqueID
 Server Generates a pasword Sends to Device (Server Saves UID with password)
+-> SYNCACK:PASS;
 From This point on server only talks to device with this password (Device only reads Messages with password attached)
 
 
 Server did not connected to all its peers, so server's listener is on
 A device connects to server, Sends its UniqueID
+-> CONN:UID;
 UID was saved on server,
 Server connects to it using password
+-> CONN:PASS;
 
 
 Server did not connected to all its peers, so server's listener is on
 A device connects to server, Sends its UniqueID
+-> CONN:UID;
 UID was not saved on server,
 Server closes connection
+-> (close connection)
 
 Server connected to all its peers, server listener is off
 
@@ -23,20 +29,27 @@ Server connected to all its peers, server listener is off
 Client is Synced->
 Client is not Connected, so it discovers servers
 for each server it discovers it sends its UID
+-> CONN:UID;
 >if it hears back its password it stops discovering servers
+-> CONN:PASS;
 >if it hears back something else, it disconnects
+-> ***
+-> (Disconnects)
 
 
 Deck is not Synced->
 Deck is not connected, so it discovers servers
 for each server (and one at a time) it tries to get synced
-Sends Sync:UID
-Deck can reply -> REJECT, rejects Sync Operation, Dismiss and continue with another server
-Deck can reply -> SYNCTRY:6pass(6 digit password to show at screen to get conformation)
+-> SYNCREQ:UID;
+Server can reply -> REJECT, rejects Sync Operation, Dismiss and continue with another server
+-> SYNCREJ; (Disconnects)
+Server can reply -> SYNCTRY:6pass(6 digit password to show at screen to get conformation)
+-> SYNCTRY:6PASS;
 User sees 6pass in Server UI and Deck UI
 User can press Accept -> Deck Sends ACCEPT; Deck Stores 6pass in application storage. Deck is now Synced
+-> SYNCACCEPT;
 User can press Reject -> rejects Sync Operation, Dismiss and continue with another server
-
+-> SYNCREJ;
 
 
 
