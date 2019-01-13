@@ -1,26 +1,30 @@
 package com.seyahdoo.pmdeck
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.support.v7.app.AppCompatActivity
+import android.graphics.Color
 import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
 import android.util.Base64
 import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageButton
+import android.widget.Toast
+import com.danimahardhika.cafebar.CafeBar
+import com.danimahardhika.cafebar.CafeBarTheme
 import kotlinx.android.synthetic.main.activity_main.*
-
 
 class MainActivity : AppCompatActivity() {
 
-    var Synced:Boolean = false
+    var Synced:Boolean = true
     var SyncTrying:Boolean = false
-    var SyncPass:String = "0"
+    var SyncPass:String = "123456"
     var SyncCon:Connection? = null
     var PassAccepted:Boolean = false
-    var Pass:String = "0";
+    var Pass:String = "0"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,7 +36,8 @@ class MainActivity : AppCompatActivity() {
 
         val buttonList: List<ImageButton> = listOf(btn0,btn1,btn2,btn3,btn4,btn5,btn6,btn7,btn8,btn9,btn10,btn11,btn12,btn13,btn14);
 
-        val controlListener = fun (con:Connection,s:String){
+        val controlListener = @SuppressLint("Range")
+        fun (con:Connection, s:String){
             for (msg in s.split(";")){
                 val spl = msg.split(":");
                 val cmd = spl[0]
@@ -68,7 +73,6 @@ class MainActivity : AppCompatActivity() {
                         }catch (e:Exception){
                             con.closeConnection()
                         }
-
                     }
                     "SYNCREJ" -> {
                         con.closeConnection()
@@ -82,7 +86,39 @@ class MainActivity : AppCompatActivity() {
                             SyncTrying = true
                             SyncCon = con
                             //Open Sync UI
+
+                            CafeBar.builder(this)
+                                .theme(CafeBarTheme.LIGHT)
+                                .floating(true)
+                                .swipeToDismiss(true)
+                                .duration(Int.MAX_VALUE)
+                                .content("Sync request came Do you accept? Password is $SyncPass ")
+                                .positiveText("Accept")
+                                .positiveColor(Color.BLUE)
+                                .negativeText("Reject")
+                                .negativeColor(Color.RED)
+                                .onPositive {
+                                    if (!SyncTrying) return@onPositive
+                                    SyncCon?.sendMessage("SYNCACCEPT:${SyncPass};")
+                                    Synced = true
+                                    SyncTrying = false
+                                    Pass = SyncPass
+                                    SyncPass = "0"
+                                    it.dismiss()
+                                }
+                                .onNegative {
+                                    if (!SyncTrying) return@onNegative
+                                    SyncCon?.sendMessage("SYNCREJ;")
+                                    SyncTrying = false
+                                    SyncPass = "0"
+                                    SyncCon?.closeConnection()
+                                    it.dismiss()
+                                }
+                                .show();
+
                         }catch (e:Exception){
+                            e.printStackTrace()
+                            Log.e("Network Listener","Closing Connection, Stuff Happened")
                             con.closeConnection()
                         }
                     }
@@ -92,6 +128,7 @@ class MainActivity : AppCompatActivity() {
 
         buttonList.forEachIndexed{ index, element ->
             element.setOnTouchListener { _:View, e:MotionEvent ->
+                if (!Synced) return@setOnTouchListener true
                 when (e.action){
                     MotionEvent.ACTION_DOWN -> {
                         Connection.openConnections.forEach {
@@ -131,29 +168,31 @@ class MainActivity : AppCompatActivity() {
     var swap:Boolean = true;
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP){
-            //RebirthHelper.doRestart(this)
-            SyncCon?.sendMessage("SYNCACCEPT:${SyncPass};")
-            Synced = true
-            Pass = SyncPass
-            return true
+            RebirthHelper.doRestart(this)
+
         }else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
             //swap = !swap;
             //setSystemUIEnabled(swap);
-            SyncCon?.sendMessage("SYNCREJ;")
-            SyncTrying = false
-            SyncPass = "0"
-            SyncCon?.closeConnection()
-            return true
+
         }
-        
-
-
         return true
     }
 
 
+    override fun onKeyLongPress(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            Toast.makeText(getApplicationContext(),"Disconecting and UnSyncing",Toast.LENGTH_SHORT).show();
+            Connection.openConnections.forEach {
+                it.closeConnection()
+            }
+            Synced = false
+            SyncTrying = false
+            SyncPass = "0"
+            return true
+        }
+        return super.onKeyLongPress(keyCode, event)
+    }
 
 
 
