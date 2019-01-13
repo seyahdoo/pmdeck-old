@@ -14,14 +14,12 @@ class DeviceManager:
         self.connected_callback = None
         self.disconnected_callback = None
         self.zconf = zeroconf.Zeroconf()
-        self.Decks = [
-            {
-                "uid":"ANDROID1",
-                "pass":"123456",
-                "connected":"false"
-
+        self.Decks = {
+            "ANDROID1":{
+                "pass": "123456",
+                "connected": "false"
             }
-        ]
+        }
 
         return
 
@@ -145,9 +143,8 @@ class Deck:
                         elif(cmd == "CONN"):
                             args = spl[1].split(",")
                             self.id = args[0]
-                            for i in self.deviceManager.Decks:
-                                if i["uid"] == self.id:
-                                    self.client_socket.send("CONN:{};".format(i["pass"]).encode("utf-8"))
+                            password = self.deviceManager.Decks[self.id]["pass"]
+                            self.client_socket.send("CONN:{};".format(password).encode("utf-8"))
 
                         elif(cmd == "CONNACCEPT"):
                             self.reset()
@@ -156,7 +153,15 @@ class Deck:
                         elif(cmd == "SYNCREQ"):
                             args = spl[1].split(",")
                             self.id = args[0]
-                            self.client_socket.send("CONN:{};".format(i["pass"]).encode("utf-8"))
+                            self.client_socket.send("SYNCTRY:{};".format("123456").encode("utf-8"))
+                            self.deviceManager.Decks[self.id]["pass"] = args[0]
+
+
+                        elif(cmd == "SYNCACCEPT"):
+                            args = spl[1].split(",")
+                            self.deviceManager.Decks[self.id]["pass"] = args[0]
+                            self.deviceManager.Decks[self.id]["synced"] = True
+                            self.client_socket.send("CONN:{};".format(args[0]).encode("utf-8"))
 
 
                 except Exception as e:

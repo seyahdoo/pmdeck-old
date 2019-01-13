@@ -135,6 +135,7 @@ class MainActivity : AppCompatActivity() {
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP){
             //RebirthHelper.doRestart(this)
             SyncCon?.sendMessage("SYNCACCEPT:${SyncPass};")
+            Synced = true
             Pass = SyncPass
             return true
         }else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
@@ -146,6 +147,8 @@ class MainActivity : AppCompatActivity() {
             SyncCon?.closeConnection()
             return true
         }
+        
+
 
         return true
     }
