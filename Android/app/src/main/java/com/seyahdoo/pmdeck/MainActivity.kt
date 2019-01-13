@@ -1,6 +1,5 @@
 package com.seyahdoo.pmdeck
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.support.v7.app.AppCompatActivity
@@ -12,23 +11,24 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageButton
 import kotlinx.android.synthetic.main.activity_main.*
-import org.jetbrains.anko.doAsync
-import java.net.Socket
 
 
 class MainActivity : AppCompatActivity() {
 
     var Synced:Boolean = false
-    var PassAccepted:Boolean = true
-    var Pass:Int = 0;
+    var SyncTrying:Boolean = false
+    var SyncPass:String = "0"
+    var SyncCon:Connection? = null
+    var PassAccepted:Boolean = false
+    var Pass:String = "0";
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val sharedPref = this?.getPreferences(Context.MODE_PRIVATE)
-        Synced = sharedPref.getBoolean("Synced",false)
-        Pass = sharedPref.getInt("Pass",0)
+        //val sharedPref = this?.getPreferences(Context.MODE_PRIVATE)
+        //Synced = sharedPref.getBoolean("Synced",false)
+        //Pass = sharedPref.getString("Pass","0")
 
         val buttonList: List<ImageButton> = listOf(btn0,btn1,btn2,btn3,btn4,btn5,btn6,btn7,btn8,btn9,btn10,btn11,btn12,btn13,btn14);
 
@@ -38,7 +38,10 @@ class MainActivity : AppCompatActivity() {
                 val cmd = spl[0]
                 when (cmd){
                     "IMAGE" -> {
-                        if(!PassAccepted) return
+                        if (!Synced || (Synced && !PassAccepted)){
+                            con.closeConnection()
+                            return
+                        }
                         try {
                             val args = spl[1].split(",")
                             val image = buttonList[(args[0]).toInt()]
@@ -55,20 +58,50 @@ class MainActivity : AppCompatActivity() {
                     "PING" -> {
                         con.sendMessage("PONG;")
                     }
+                    "CONN" -> {
+                        try {
+                            val args = spl[1].split(",")
+                            if (args[0] == Pass){
+                                PassAccepted = true
+                                con.sendMessage("CONNACCEPT;")
+                            }
+                        }catch (e:Exception){
+                            con.closeConnection()
+                        }
+
+                    }
+                    "SYNCREJ" -> {
+                        con.closeConnection()
+                    }
+                    "SYNCTRY" -> {
+                        if (Synced) return
+                        if (SyncTrying) return
+                        try {
+                            val args = spl[1].split(",")
+                            SyncPass = args[0]
+                            SyncTrying = true
+                            SyncCon = con
+                            //Open Sync UI
+                        }catch (e:Exception){
+                            con.closeConnection()
+                        }
+                    }
                 }
             }
         }
-
-        val buttonPressed = Event<Int,String>() // define event
 
         buttonList.forEachIndexed{ index, element ->
             element.setOnTouchListener { _:View, e:MotionEvent ->
                 when (e.action){
                     MotionEvent.ACTION_DOWN -> {
-                        buttonPressed(index,"0")
+                        Connection.openConnections.forEach {
+                            it.sendMessage("BTNEVENT:$index,0;")
+                        }
                     }
                     MotionEvent.ACTION_UP -> {
-                        buttonPressed(index,"1")
+                        Connection.openConnections.forEach {
+                            it.sendMessage("BTNEVENT:$index,1;")
+                        }
                     }
                 }
 
@@ -82,10 +115,14 @@ class MainActivity : AppCompatActivity() {
                 Log.e("Discovery", "Found ${it.inetAddresses}:${it.port}")
                 val con = Connection()
                 con.setOnDataListener(controlListener)
-                buttonPressed += { key:Int, status:String ->
-                    con.sendMessage("BTNEVENT:$key,$status;")
+                con.openConnection(it.inetAddresses[0],it.port) {
+                    if(Synced){
+                        con.sendMessage("CONN:${getUID()};")
+                    }else{
+                        con.sendMessage("SYNCREQ:${getUID()};")
+                    }
                 }
-                con.openConnection(it.inetAddresses[0],it.port)
+
             }
         }
 
@@ -96,11 +133,17 @@ class MainActivity : AppCompatActivity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
 
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP){
-            RebirthHelper.doRestart(this)
+            //RebirthHelper.doRestart(this)
+            SyncCon?.sendMessage("SYNCACCEPT:${SyncPass};")
+            Pass = SyncPass
             return true
         }else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
-            swap = !swap;
-            setSystemUIEnabled(swap);
+            //swap = !swap;
+            //setSystemUIEnabled(swap);
+            SyncCon?.sendMessage("SYNCREJ;")
+            SyncTrying = false
+            SyncPass = "0"
+            SyncCon?.closeConnection()
             return true
         }
 

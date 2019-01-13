@@ -13,23 +13,25 @@ class DeviceManager:
     def __init__(self):
         self.connected_callback = None
         self.disconnected_callback = None
-        return
+        self.zconf = zeroconf.Zeroconf()
+        self.Decks = [
+            {
+                "uid":"ANDROID1",
+                "pass":"123456",
+                "connected":"false"
 
-    def start(self):
-        threading.Thread(
-            target=self.connector_listener
-        ).start()
+            }
+        ]
+
         return
 
     def connector_listener(self):
         bind_ip = '0.0.0.0'
-        # bind_port = 23997
-
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.bind((bind_ip, 0))
-        server_socket.listen(5)  # max backlog of connections
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.bind((bind_ip, 0))
+        self.server_socket.listen(5)  # max backlog of connections
         local_ip = ""
-        port = server_socket.getsockname()[1]
+        port = self.server_socket.getsockname()[1]
         try:
             local_ip = (([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")] or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) + ["no IP found"])[0]
         except:
@@ -37,31 +39,52 @@ class DeviceManager:
 
         print('Listening on {}:{}'.format(local_ip, port))
 
+        self.register_service(local_ip,port)
+
+        while True:
+            try:
+                client_socket, address = self.server_socket.accept()
+                print('Accepted connection from {}:{}'.format(address[0], address[1]))
+                deck = Deck(client_socket, self)
+                #self.on_connected(deck)
+                deck._read()
+            except Exception as e:
+                print(e)
+                return
+        return
+
+    def listen_connections(self):
+        self.connector_thread:threading.Thread = threading.Thread(
+            target=self.connector_listener
+        ).start()
+
+        return
+
+    def stop_listening_connections(self):
+        self.server_socket.close()
+        return
+
+    def register_service(self,local_ip,port):
+        print("Registering Service")
         service_name = local_ip + ":" + str(port) + "._pmdeck._tcp.local."
 
         desc = {}
         info = zeroconf.ServiceInfo("_pmdeck._tcp.local.",
                                     service_name,
                                     socket.inet_aton(local_ip), port, 0, 0,
-                                    desc, local_ip +".")
+                                    desc, local_ip + ".")
 
-        z = zeroconf.Zeroconf()
-        z.register_service(info)
+        self.zconf.register_service(info)
+        return
 
-        @atexit.register
-        def _unregister():
-            print("unregistering")
-            z.unregister_all_services()
+    def unregister_service(self):
+        self.zconf.unregister_all_services()
+        return
 
-        print("registered")
+    def sync_new_device(self):
+        return
 
-        while True:
-            client_socket, address = server_socket.accept()
-            print('Accepted connection from {}:{}'.format(address[0], address[1]))
-            deck = Deck(client_socket)
-            self.on_connected(deck)
-            deck._read()
-
+    def stop_syncing(self):
         return
 
     def set_on_connected_callback(self, callback):
@@ -69,7 +92,7 @@ class DeviceManager:
         return
 
     def on_connected(self, deck):
-        deck.reset()
+        # deck.reset()
         if self.connected_callback:
             self.connected_callback(deck)
         return
@@ -86,12 +109,13 @@ class DeviceManager:
 
 class Deck:
 
-    def __init__(self, client_socket: socket.socket):
+    def __init__(self, client_socket: socket.socket, deviceManager:DeviceManager):
 
         self.id = None
         self.key_callback = None
         self.client_socket: socket.socket = client_socket;
         self.disconnected = False
+        self.deviceManager = deviceManager
         return
 
     def __del__(self):
@@ -107,14 +131,33 @@ class Deck:
                 try:
                     data = self.client_socket.recv(1024)
                     stream = data.decode('utf-8')
+                    print(stream)
                     for msg in list(filter(None, stream.split(';'))):
                         spl = msg.split(":")
                         cmd = spl[0]
                         if(cmd == "PONG"):
                             pass
+
                         elif(cmd == "BTNEVENT"):
                             args = spl[1].split(",")
                             self.on_key_status_change(args[0], args[1])
+
+                        elif(cmd == "CONN"):
+                            args = spl[1].split(",")
+                            self.id = args[0]
+                            for i in self.deviceManager.Decks:
+                                if i["uid"] == self.id:
+                                    self.client_socket.send("CONN:{};".format(i["pass"]).encode("utf-8"))
+
+                        elif(cmd == "CONNACCEPT"):
+                            self.reset()
+                            self.deviceManager.on_connected(self)
+
+                        elif(cmd == "SYNCREQ"):
+                            args = spl[1].split(",")
+                            self.id = args[0]
+                            self.client_socket.send("CONN:{};".format(i["pass"]).encode("utf-8"))
+
 
                 except Exception as e:
                     print(e)

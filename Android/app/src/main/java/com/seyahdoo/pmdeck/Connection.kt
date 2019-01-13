@@ -6,8 +6,14 @@ import java.io.*
 import java.lang.Exception
 import java.net.InetAddress
 import java.net.Socket
+import java.net.SocketException
+import kotlin.math.log
 
 class Connection {
+
+    companion object {
+        var openConnections:MutableList<Connection> = mutableListOf()
+    }
 
     var socket: Socket? = null;
     var writer: PrintWriter? = null;
@@ -18,7 +24,7 @@ class Connection {
 
     private var lastReaderContinue: ShouldContinue? = null;
 
-    fun openConnection(ip:InetAddress, port:Int) {
+    fun openConnection(ip:InetAddress, port:Int, onSuccess:()->Unit) {
         doThreaded {
             try {
                 socket = Socket(ip, port)
@@ -26,6 +32,8 @@ class Connection {
                 writer = PrintWriter(socket!!.getOutputStream())
                 val inputReader = BufferedReader(InputStreamReader(socket?.getInputStream()));
                 reader(ShouldContinue(), inputReader)
+                openConnections.add(this)
+                onSuccess()
             } catch (e: IOException) {
                 Log.e("Connection", e.toString());
             }
@@ -33,7 +41,10 @@ class Connection {
     }
 
     fun closeConnection(){
-        doAsync {
+        doThreaded {
+            Log.e("Connection","Closing connection")
+            openConnections.remove(this);
+
             lastReaderContinue?.cont = false;
             writer?.close()
             socket?.close()
@@ -58,13 +69,19 @@ class Connection {
         lastReaderContinue = shouldContinue
         doThreaded {
             while (shouldContinue.cont) {
-                val input: String = bufreader.readLine() ?: continue
-                OnDataCallback?.invoke(this@Connection,input)
+                try {
+                    val input: String = bufreader.readLine() ?: continue
+                    Log.e("Message Received",input)
+                    OnDataCallback?.invoke(this@Connection,input)
+                } catch (e:Exception){
+                    this.closeConnection()
+                }
             }
         }
     }
 
     fun sendMessage(message:String){
+        Log.e("Message Sent",message)
         try{
             writer?.write(message)
             writer?.flush()

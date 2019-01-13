@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     manager.set_on_connected_callback(on_connected_callback)
 
-    manager.start()
+    manager.listen_connections()
 
     Event().wait()
 

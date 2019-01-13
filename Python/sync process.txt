@@ -26,8 +26,8 @@ Server closes connection
 Server connected to all its peers, server listener is off
 
 
-Client is Synced->
-Client is not Connected, so it discovers servers
+Deck is Synced->
+Deck is not Connected, so it discovers servers
 for each server it discovers it sends its UID
 -> CONN:UID;
 >if it hears back its password it stops discovering servers
@@ -35,6 +35,8 @@ for each server it discovers it sends its UID
 >if it hears back something else, it disconnects
 -> ***
 -> (Disconnects)
+When Deck Hears correct password
+-> CONNACCEPT;
 
 
 Deck is not Synced->
