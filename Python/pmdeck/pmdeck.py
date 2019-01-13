@@ -14,12 +14,13 @@ class DeviceManager:
         self.connected_callback = None
         self.disconnected_callback = None
         self.zconf = zeroconf.Zeroconf()
-        self.Decks = {
-            "ANDROID1":{
-                "pass": "123456",
-                "connected": "false"
-            }
-        }
+        self.Decks = {}
+        # {
+            # "ANDROID1":{
+            #     "pass": "123456",
+            #     "connected": "false"
+            # }
+        # }
 
         return
 
@@ -154,14 +155,16 @@ class Deck:
                             args = spl[1].split(",")
                             self.id = args[0]
                             self.client_socket.send("SYNCTRY:{};".format("123456").encode("utf-8"))
-                            self.deviceManager.Decks[self.id]["pass"] = args[0]
-
 
                         elif(cmd == "SYNCACCEPT"):
                             args = spl[1].split(",")
-                            self.deviceManager.Decks[self.id]["pass"] = args[0]
-                            self.deviceManager.Decks[self.id]["synced"] = True
+                            # self.deviceManager.Decks[self.id]["pass"] = args[0]
+                            # self.deviceManager.Decks[self.id]["synced"] = True
                             self.client_socket.send("CONN:{};".format(args[0]).encode("utf-8"))
+                            if self.id in self.deviceManager.Decks:
+                                self.deviceManager.Decks[self.id]["pass"] = "123456"
+                            else:
+                                self.deviceManager.Decks[self.id] = {"connected":True, "pass":"123456"}
 
 
                 except Exception as e:
