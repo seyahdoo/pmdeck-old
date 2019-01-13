@@ -11,6 +11,11 @@ import time
 import sys
 import os
 
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QCheckBox, QSystemTrayIcon, \
+    QSpacerItem, QSizePolicy, QMenu, QAction, QStyle, qApp
+from PyQt5.QtCore import QSize
+
+
 def key_callback(deck, key, status):
 
     if status == "0":
@@ -35,6 +40,23 @@ def on_connected_callback(deck):
 
 # Decorators
 
+
+def show_tray():
+
+    def pri():
+        print("hola")
+
+    trayIconMenu = QMenu()
+    trayIconMenu.addAction(pri)
+    trayIconMenu.addAction(pri)
+    trayIconMenu.addAction(pri)
+    trayIconMenu.addSeparator()
+    trayIconMenu.addAction(pri)
+
+    trayIcon = QSystemTrayIcon()
+    trayIcon.show()
+
+
 if __name__ == "__main__":
 
     manager = pmdeck.DeviceManager()
@@ -43,6 +65,9 @@ if __name__ == "__main__":
 
     manager.listen_connections()
 
-    Event().wait()
+    app = QApplication(sys.argv)
+    show_tray()
+    sys.exit(app.exec())
+
 
 
