@@ -47,7 +47,7 @@ Server can reply -> SYNCTRY:6pass(6 digit password to show at screen to get conf
 -> SYNCTRY:6PASS;
 User sees 6pass in Server UI and Deck UI
 User can press Accept -> Deck Sends ACCEPT; Deck Stores 6pass in application storage. Deck is now Synced
--> SYNCACCEPT;
+-> SYNCACCEPT:6PASS;
 User can press Reject -> rejects Sync Operation, Dismiss and continue with another server
 -> SYNCREJ;
 
