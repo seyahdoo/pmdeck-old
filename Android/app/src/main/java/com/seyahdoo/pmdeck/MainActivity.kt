@@ -1,5 +1,6 @@
 package com.seyahdoo.pmdeck
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.support.v7.app.AppCompatActivity
@@ -12,24 +13,32 @@ import android.view.View
 import android.widget.ImageButton
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.doAsync
+import java.net.Socket
 
 
 class MainActivity : AppCompatActivity() {
 
-    private val con: Connection = Connection()
+    var Synced:Boolean = false
+    var PassAccepted:Boolean = true
+    var Pass:Int = 0;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val sharedPref = this?.getPreferences(Context.MODE_PRIVATE)
+        Synced = sharedPref.getBoolean("Synced",false)
+        Pass = sharedPref.getInt("Pass",0)
+
         val buttonList: List<ImageButton> = listOf(btn0,btn1,btn2,btn3,btn4,btn5,btn6,btn7,btn8,btn9,btn10,btn11,btn12,btn13,btn14);
 
-        con.setOnDataListener {
-            for (msg in it.split(";")){
+        val controlListener = fun (con:Connection,s:String){
+            for (msg in s.split(";")){
                 val spl = msg.split(":");
                 val cmd = spl[0]
                 when (cmd){
                     "IMAGE" -> {
+                        if(!PassAccepted) return
                         try {
                             val args = spl[1].split(",")
                             val image = buttonList[(args[0]).toInt()]
@@ -44,35 +53,22 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     "PING" -> {
-                        Log.e("PINGING","PONG!")
                         con.sendMessage("PONG;")
                     }
                 }
             }
         }
 
-        val context = this
-
-        doAsync {
-            val d = NetworkDiscovery(context)
-            d.findServers {
-                Log.e("Discovery", "Found ${it.inetAddresses}:${it.port}")
-                con.closeConnection()
-                con.openConnection(it.inetAddresses[0],it.port)
-            }
-        }
-
-
-
+        val buttonPressed = Event<Int,String>() // define event
 
         buttonList.forEachIndexed{ index, element ->
             element.setOnTouchListener { _:View, e:MotionEvent ->
                 when (e.action){
                     MotionEvent.ACTION_DOWN -> {
-                        con.sendMessage("BTNEVENT:$index,0;")
+                        buttonPressed(index,"0")
                     }
                     MotionEvent.ACTION_UP -> {
-                        con.sendMessage("BTNEVENT:$index,1;")
+                        buttonPressed(index,"1")
                     }
                 }
 
@@ -80,6 +76,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        doThreaded {
+            val d = NetworkDiscovery(this@MainActivity)
+            d.findServers {
+                Log.e("Discovery", "Found ${it.inetAddresses}:${it.port}")
+                val con = Connection()
+                con.setOnDataListener(controlListener)
+                buttonPressed += { key:Int, status:String ->
+                    con.sendMessage("BTNEVENT:$key,$status;")
+                }
+                con.openConnection(it.inetAddresses[0],it.port)
+            }
+        }
 
     }
 
@@ -101,46 +109,6 @@ class MainActivity : AppCompatActivity() {
 
 
 
-    /**
-     * Uses Root access to enable and disable SystemUI.
-     * @param enabled Decide whether to enable or disable.
-     */
-    fun setSystemUIEnabled(enabled:Boolean) {
 
-        if (enabled){
-            //Not working :\
-            //Show
-            var proc: Process? = null
-            try {
-                proc = Runtime.getRuntime()
-                    .exec(arrayOf("su", "-c", "am startservice -n com.android.systemui/.SystemUIService"))
-            } catch (e: Exception) {
-                Log.w("Main", "Failed to kill task bar (1).")
-                e.printStackTrace()
-            }
-
-            try {
-                proc!!.waitFor()
-            } catch (e: Exception) {
-                Log.w("Main", "Failed to kill task bar (2).")
-                e.printStackTrace()
-            }
-
-
-        }else{
-            try {
-                var ProcID = "42"
-
-                //REQUIRES ROOT
-                val proc = Runtime.getRuntime()
-                    .exec(arrayOf("su", "-c", "service call activity $ProcID s16 com.android.systemui")) //WAS 79
-                proc.waitFor()
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-
-    }
 
 }
