@@ -11,10 +11,10 @@ import time
 import sys
 import os
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QCheckBox, QSystemTrayIcon, \
-    QSpacerItem, QSizePolicy, QMenu, QAction, QStyle, qApp
-from PyQt5.QtCore import QSize
-
+import pystray
+from pystray import Icon, MenuItem, Menu
+from PIL import Image, ImageDraw
+import time
 
 def key_callback(deck, key, status):
 
@@ -41,21 +41,18 @@ def on_connected_callback(deck):
 # Decorators
 
 
-def show_tray():
-
-    def pri():
-        print("hola")
-
-    trayIconMenu = QMenu()
-    trayIconMenu.addAction(pri)
-    trayIconMenu.addAction(pri)
-    trayIconMenu.addAction(pri)
-    trayIconMenu.addSeparator()
-    trayIconMenu.addAction(pri)
-
-    trayIcon = QSystemTrayIcon()
-    trayIcon.show()
-
+def callback(icon):
+    image = Image.new('RGBA', (128,128), (255,255,255,255)) # create new image
+    percent = 100
+    while True:
+        img = image.copy()
+        d = ImageDraw.Draw(img)
+        d.rectangle([0, 128, 128, 128-(percent * 128) / 100], fill='blue')
+        icon.icon = img
+        time.sleep(1)
+        percent -= 5
+        if percent < 0:
+            percent = 100
 
 if __name__ == "__main__":
 
@@ -65,9 +62,29 @@ if __name__ == "__main__":
 
     manager.listen_connections()
 
-    app = QApplication(sys.argv)
-    show_tray()
-    sys.exit(app.exec())
+    state = False
 
+
+    def on_clicked(icon, item):
+        global state
+        print("Blah")
+        state = not state
+
+
+    # Update the state in `on_clicked` and return the new state in
+    # a `checked` callable
+    Icon('test', Image.new('RGBA', (128,128), (255,255,255,255)), menu=Menu(
+        MenuItem(
+            'Sync New',
+            on_clicked),
+        MenuItem(
+            'Restart',
+            on_clicked,
+            default=True),
+        MenuItem(
+            'Quit',
+            on_clicked,
+            checked=lambda item: state) )
+        ).run()
 
 
